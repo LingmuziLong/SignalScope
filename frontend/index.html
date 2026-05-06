@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title id="pageTitle">多通道信号实时可视化系统</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <!-- 控制按钮组（反色 + 语言切换） -->
+    <div class="top-buttons">
+        <button id="invertModeBtn" class="mode-btn" title="切换反色模式">☾</button>
+        <button id="langSwitchBtn" class="mode-btn" title="切换语言">Ch</button>
+    </div>
+
+    <h1 id="mainTitle">多通道信号实时可视化系统</h1>
+
+    <!-- 控制栏 -->
+    <div class="control-bar">
+        <div class="control-row">
+            <div class="data-source">
+                <span class="node-info" id="dataSourceLabel">数据来源：</span>
+                <span id="currentNode" class="node-name">模拟数据节点（代码生成）</span>
+                <button id="switchNodeBtn" onclick="showNodeSelector()">更换节点</button>
+            </div>
+            <div class="right-controls">
+                <div class="carousel-controls">
+                    <span id="currentDisplayLabel">当前显示：</span>
+                    <span id="currentPairLabel">节点 1 & 2</span>
+                    <span id="countdown" class="countdown-timer">10 s</span>
+                    <button id="prevPairBtn" class="nav-btn" title="上一对节点">◀</button>
+                    <button id="nextPairBtn" class="nav-btn" title="下一对节点">▶</button>
+                    <button id="playPauseBtn" class="play-pause-btn" title="暂停自动轮播">暂停</button>
+                </div>
+                <div class="timer-settings">
+                    <label id="intervalLabel">轮询时间：</label>
+                    <input type="number" id="intervalInput" min="1" max="60" value="10" step="1">
+                    <button id="saveIntervalBtn">保存</button>
+                </div>
+                <div class="nodecount-settings">
+                    <label id="nodeCountLabel">节点数量：</label>
+                    <input type="number" id="nodeCountInput" min="1" max="100" value="20" step="1">
+                    <button id="setNodeCountBtn">设置</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 固定双节点布局容器 -->
+    <div id="nodesContainer" class="nodes-vertical-container">
+        <!-- 节点 1（上部） -->
+        <div class="node-card" id="nodeCard1">
+            <div class="node-header">
+                <div class="node-name-label" id="nodeName1" title="左键修改节点名称">节点 1</div>
+                <div class="node-stats" id="nodeStats1">
+                    <div class="stat-item"><span class="stat-label">RMS:</span><span class="stat-value" id="rms1">0.00</span></div>
+                    <div class="stat-item"><span class="stat-label">峰值:</span><span class="stat-value" id="peak1">0.00</span></div>
+                    <div class="stat-item"><span class="stat-label">频率:</span><span class="stat-value" id="freq1">0.0 Hz</span></div>
+                </div>
+            </div>
+            <div class="plots-row">
+                <div class="plot-wrapper">
+                    <div class="plot-title" id="timeTitle1">原始信号波形</div>
+                    <div class="canvas-container"><canvas id="timeCanvas1"></canvas></div>
+                </div>
+                <div class="plot-wrapper">
+                    <div class="plot-title" id="freqTitle1">频域分析</div>
+                    <div class="canvas-container"><canvas id="freqCanvas1"></canvas></div>
+                </div>
+                <div class="plot-wrapper">
+                    <div class="plot-title" id="histTitle1">信号分布</div>
+                    <div class="canvas-container"><canvas id="histCanvas1"></canvas></div>
+                </div>
+            </div>
+        </div>
+        <!-- 节点 2（下部） -->
+        <div class="node-card" id="nodeCard2">
+            <div class="node-header">
+                <div class="node-name-label" id="nodeName2" title="左键修改节点名称">节点 2</div>
+                <div class="node-stats" id="nodeStats2">
+                    <div class="stat-item"><span class="stat-label">RMS:</span><span class="stat-value" id="rms2">0.00</span></div>
+                    <div class="stat-item"><span class="stat-label">峰值:</span><span class="stat-value" id="peak2">0.00</span></div>
+                    <div class="stat-item"><span class="stat-label">频率:</span><span class="stat-value" id="freq2">0.0 Hz</span></div>
+                </div>
+            </div>
+            <div class="plots-row">
+                <div class="plot-wrapper">
+                    <div class="plot-title" id="timeTitle2">原始信号波形</div>
+                    <div class="canvas-container"><canvas id="timeCanvas2"></canvas></div>
+                </div>
+                <div class="plot-wrapper">
+                    <div class="plot-title" id="freqTitle2">频域分析</div>
+                    <div class="canvas-container"><canvas id="freqCanvas2"></canvas></div>
+                </div>
+                <div class="plot-wrapper">
+                    <div class="plot-title" id="histTitle2">信号分布</div>
+                    <div class="canvas-container"><canvas id="histCanvas2"></canvas></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tooltip" id="tooltip"></div>
+
+    <!-- 节点选择模态框 - onclick 参数改为英文原始值 -->
+    <div id="nodeModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-title" id="modalTitle">选择数据节点</div>
+            <div class="node-option active" onclick="selectNode('Simulated Data (Generated)')" id="opt-sim">模拟数据节点（代码生成）<small></small></div>
+            <div class="node-option" onclick="selectNode('Real Data (Hardware)')" id="opt-g03">真实数据节点<small></small></div>
+            <button class="close-btn" id="modalCloseBtn" onclick="closeModal()">取消</button>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

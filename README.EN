@@ -1,0 +1,223 @@
+# SignalScope - Multi‑Channel Real‑Time Signal Visualization System
+
+[![Python Version](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green.svg)](https://fastapi.tiangolo.com/)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+
+
+## 1. Introduction
+
+**SignalScope** is a real‑time visualization system for configurable multi‑channel signals.  
+It pushes multi‑channel signal data through WebSocket and renders them in the browser as waveform, spectrum, and histogram charts. The system supports custom channel count, layout, carousel rules, and data sources.
+
+**Use Cases**:
+
+- Multi‑beam monitoring of radio telescopes
+- Multi‑frequency signal monitoring for amateur radio or SDR
+- Real‑time display of laboratory instrument channel data
+
+**Core Features**:
+
+- Dynamic node count (1–100 channels)
+- Automatic top‑bottom carousel with configurable interval (1–60 s)
+- Manual node‑pair switching with pause/resume
+- Three views: time‑domain waveform, frequency spectrum, amplitude histogram
+- Real‑time statistics (RMS, peak value, dominant frequency)
+- Persistent custom node names (saved locally)
+- Data source switching (simulated / real‑hardware fallback)
+- One‑click night mode (inverse color)
+- Bilingual UI (Chinese / English)
+- Click charts to display exact values
+
+
+
+## 2. System Architecture
+
+```text
+[Browser] ←── WebSocket ──→ [FastAPI Backend]
+    │                         │
+    │                         ├─ Simulated data source (built‑in)
+    │                         ├─ Real data source (reserved interface)
+    │                         └─ File / streaming data (extensible)
+    │
+    └─ Canvas drawing (time domain / frequency domain / histogram)
+```
+
+**Backend**: FastAPI + WebSocket + NumPy (asynchronous concurrency)
+
+**Frontend**: Native JavaScript + Canvas (no third‑party libraries, high‑performance drawing)
+
+**Data source abstraction**: Unified interface `generate_node_data(node_idx, node_type)` for switching between simulation and real hardware seamlessly.
+
+
+
+## 3. Requirements
+
+- Python 3.9+
+- Dependencies: fastapi, uvicorn, numpy
+- Browser: Chrome / Firefox / Edge (with WebSocket support)
+
+
+
+## 4. Installation & Run
+
+**GitHub Repository**: https://github.com/LingmuziLong/SignalScope
+
+```bash
+# HTTPS (recommended, no SSH key required)
+git clone https://github.com/LingmuziLong/SignalScope.git
+
+# SSH (requires SSH key configuration)
+git clone git@github.com:LingmuziLong/SignalScope.git
+
+# Create virtual environment (optional)
+python -m venv venv
+source venv/bin/activate   # Linux/Mac
+# or venv\Scripts\activate   # Windows
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Start the backend
+python backend/main.py
+```
+
+- Default access: `http://localhost:8000`
+- To allow external access, change `host` to `0.0.0.0` in `config.py`
+
+## 
+
+## 5. Usage Guide
+
+#### 5.1 Node Carousel & Manual Control
+
+- The page automatically switches node pairs every 10 seconds (1&2 → 3&4 → … → 19&20 → loop)
+- Use ◀ ▶ buttons to manually switch; click “Pause” to stop auto carousel, “Play” to resume
+- Carousel interval can be set in the right panel (1–60 s); click “Save” to apply immediately
+
+#### 5.2 Node Count Setting
+
+- Modify the number of nodes in the “Node Count” input field on the control bar (1–100)
+- Click “Set” – the backend immediately adjusts data generation and the frontend rebuilds the interface dynamically
+- When the node count is odd, the last page shows a single node (the second card remains empty but reserves the coordinate axes)
+
+#### 5.3 Node Name Customisation
+
+- **Left‑click** a node name label, a dialog appears to enter a custom name
+- Names are saved in browser local storage and persist across page refreshes
+
+#### 5.4 Data Source Switching
+
+- Click the “Change Data Source” button, choose either “Simulated Data Node  (code‑generated)” or “Real Data Node (hardware reserved)”
+- Real data nodes currently return all‑zero dummy data; users can extend them as described in Section 6
+
+#### 5.5 Chart Interaction
+
+- **Click on the time‑domain waveform or spectrum curve** – a tooltip shows the sample point / frequency value and amplitude
+- **Click on a histogram bar** – shows the amplitude bin, count, and percentage
+
+#### 5.6 Inverse Color Mode
+
+- Click the ☾ button in the top‑left corner – the entire interface (including  chart lines) switches to inverse colors, suitable for night or projector environments
+- Click again to restore normal mode
+
+#### 5.7 Language Switching
+
+- Click the “Ch” button – the UI toggles between Chinese and English; all  texts, buttons, and axis labels are translated simultaneously
+
+
+
+## 6. Real Data Integration Interface (Important)
+
+The project provides a **fully decoupled data acquisition layer**. Users only need to implement one function to connect any real data  source (SDR, radio telescope baseband, file playback, etc.) without  modifying the frontend or other backend logic.
+
+#### 6.1 Interface Location
+
+File: `backend/signal_generator.py`
+Method: `generate_real_data_signals(self, node_idx: int, n: int) -> Dict[str, Any]`
+
+#### 6.2 Interface Specification
+
+- **Input parameters**:
+
+	- `node_idx`: current node index (0 to NODE_COUNT-1)
+	- `n`: number of samples to return (determined by `SIGNAL_CONFIG["samples_per_node"]`, default 500)
+
+- **Return value**: a dictionary with two required keys:
+
+	```python
+	{
+	    "samples": [float],   # a list of floats of length n, representing signal amplitudes
+	    "node_idx": int       # the same node_idx as passed in
+	}
+	```
+
+	
+
+- **Note**: The returned samples should already be clipped (recommended range -100 to 100 to match `max_amplitude/min_amplitude` in the config); otherwise the frontend plots may exceed axis limits.
+
+After implementing this function, users can click “Change Data Source” →  “Real Data Node” on the web interface, and the system will automatically call this function to obtain real data and refresh the charts in real  time – no frontend changes needed.
+
+
+
+## 7. Future Hardware Testing & Optimisation Plans
+
+To deploy SignalScope in real observation or monitoring environments, we will test it with actual hardware in the future.
+
+
+
+## 8. Configuration File (`config.py`)
+
+| Parameter       | Description                                                  |
+| --------------- | ------------------------------------------------------------ |
+| `SERVER_CONFIG` | Server host, port, debug mode                                |
+| `SIGNAL_CONFIG` | Node count, samples per node, update interval (sec), amplitude range |
+| `NODE_TYPES`    | Data source type names (used for frontend display and backend logic) |
+
+
+
+
+
+## 9. FAQ
+
+**WebSocket connection fails**
+
+- Check whether the backend is running and port 8000 is open in the firewall
+- Look for errors in the browser console
+
+**No waveform for real data**
+
+- Ensure the `generate_real_data_signals` return value has the correct format and that the sample count equals `n`
+- Check that the data does not exceed the `max_amplitude/min_amplitude` range – adjust the config or add clipping accordingly
+
+**Canvas not showing or blurry**
+
+- Refresh the page and make sure the browser supports Canvas
+- For HiDPI displays, the system already handles scaling automatically; you can also try zooming the page
+
+**Charts do not update after changing node count**
+
+- The frontend should rebuild cards automatically; if not, clear the browser cache
+
+
+
+## 10. Author
+
+- Developer: LingmuziLong
+
+- Contact: lingmuzi.long@outlook.com
+
+- Last updated: May 2026
+
+	
+
+## 11. License
+
+This project is licensed under the **MIT License**. Forking, secondary development, and commercial use are welcome. If you  use SignalScope for an academic project or hardware integration, please  cite this repository. 
+
+
+
+## 12. Acknowledgments
+
+This project is an extended work of the Undergraduate Innovation Practice Training Program of the National Astronomical Observatories, Chinese Academy of Sciences (NAOC). The guidance and support from NAOC, as well as the help and encouragement from the research group members, are gratefully acknowledged.
